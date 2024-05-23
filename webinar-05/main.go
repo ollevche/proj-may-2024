@@ -5,6 +5,16 @@ import (
 	"hashtable/hashtable"
 )
 
+func getMap() map[string]string {
+	m := map[string]string{
+		"John":  "Software Engineer",
+		"James": "Plumber",
+		"Stacy": "Manager",
+	}
+
+	return m
+}
+
 func main() {
 	var h map[string]string
 
@@ -17,6 +27,8 @@ func main() {
 	h["James"] = "Plumber"
 
 	h["Stacy"] = "Manager"
+
+	// h = getMap() // getMap produces the same result, but with map literal
 
 	fmt.Println(h["John"])
 	fmt.Println(h["James"])
