@@ -1,10 +1,35 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 )
+
+func main() {
+	ctx := context.Background()
+
+	ctxWithTimeout, cancelCtxWithTimeout := context.WithTimeout(ctx, time.Second)
+	defer cancelCtxWithTimeout()
+
+	ctxWithVal := context.WithValue(ctx, "x", "y")
+
+	ctxWithDeadline, cancelCtxWithDeadline := context.WithDeadline(ctxWithVal, time.Now().Add(time.Second*5))
+	defer cancelCtxWithDeadline()
+
+	vt := ctxWithTimeout.Value("x")
+	if vt != nil {
+		fmt.Println(vt)
+	} else {
+		fmt.Println("Not found")
+	}
+
+	vd := ctxWithDeadline.Value("x")
+	if vd != nil {
+		fmt.Println(vd)
+	}
+}
 
 func exampleDeadlock() {
 	var ch chan int
