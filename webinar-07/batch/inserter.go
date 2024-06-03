@@ -1,6 +1,7 @@
 package batch
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -20,7 +21,7 @@ type batch struct {
 	logs []log.Log
 }
 
-func NewInserter(s log.Inserter) *Inserter {
+func NewInserter(ctx context.Context, s log.Inserter) *Inserter {
 	ch := make(chan batch, 100)
 
 	in := &Inserter{
@@ -30,7 +31,7 @@ func NewInserter(s log.Inserter) *Inserter {
 		mutex:             &sync.Mutex{},
 	}
 
-	go in.runInsertion(in.willCloseOnFinish)
+	go in.runInsertion(ctx, in.willCloseOnFinish)
 
 	// go func() {}() // It also works!
 
@@ -45,7 +46,7 @@ func (in *Inserter) Insert(logs []log.Log) {
 	fmt.Println("Sent batch via channel in Insert")
 }
 
-func (in *Inserter) runInsertion(closeOnFinish chan struct{}) {
+func (in *Inserter) runInsertion(ctx context.Context, closeOnFinish chan struct{}) {
 	fmt.Println("Started runInsertion")
 
 	var logsToInsert []log.Log
@@ -88,10 +89,15 @@ Loop:
 				in.insert(logsToInsert)
 				logsToInsert = nil
 			}
+
+		case <-ctx.Done():
+			fmt.Println("CONTEXT is cancelled")
+			in.insert(logsToInsert)
+			break Loop
 		}
 	}
 
-	close(closeOnFinish) // TODO: check if it works
+	close(closeOnFinish)
 }
 
 func (in *Inserter) insert(logs []log.Log) {

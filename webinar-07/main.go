@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/rand/v2"
 	"time"
@@ -14,7 +15,10 @@ import (
 func main() {
 	var inserter log.Inserter
 
-	batchInserter := batch.NewInserter(inserter)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	batchInserter := batch.NewInserter(ctx, inserter)
 
 	go func() {
 		t := time.NewTicker(time.Second / 2)
@@ -36,6 +40,8 @@ func main() {
 
 	generateAndInsertLogs(batchInserter)
 
+	time.Sleep(time.Second * 2)
+
 	batchInserter.Close()
 }
 
@@ -52,8 +58,6 @@ func generateAndInsertLogs(inserter Inserter) {
 
 			logs = append(logs, l)
 		}
-
-		time.Sleep(time.Second / 2)
 
 		inserter.Insert(logs)
 	}
