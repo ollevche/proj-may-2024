@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand/v2"
+	"time"
 	"webinar07/batch"
 	"webinar07/log"
 )
@@ -14,6 +15,24 @@ func main() {
 	var inserter log.Inserter
 
 	batchInserter := batch.NewInserter(inserter)
+
+	go func() {
+		t := time.NewTicker(time.Second / 2)
+		lastResetAt := time.Now()
+
+		for {
+			fmt.Println("Before <-t.C")
+
+			<-t.C
+
+			fmt.Println("Total inserted: ", batchInserter.GetTotalLogsInserted())
+
+			if time.Since(lastResetAt) >= time.Second {
+				fmt.Println("Reseting...")
+				batchInserter.ResetTotalLogsInserted()
+			}
+		}
+	}()
 
 	generateAndInsertLogs(batchInserter)
 
@@ -33,6 +52,8 @@ func generateAndInsertLogs(inserter Inserter) {
 
 			logs = append(logs, l)
 		}
+
+		time.Sleep(time.Second / 2)
 
 		inserter.Insert(logs)
 	}

@@ -2,14 +2,18 @@ package batch
 
 import (
 	"fmt"
+	"sync"
 	"time"
 	"webinar07/log"
 )
 
 type Inserter struct {
 	source            log.Inserter
-	ch                chan<- batch
+	ch                chan batch
 	willCloseOnFinish chan struct{}
+
+	mutex             *sync.Mutex
+	totalLogsInserted int
 }
 
 type batch struct {
@@ -23,9 +27,10 @@ func NewInserter(s log.Inserter) *Inserter {
 		source:            s,
 		ch:                ch,
 		willCloseOnFinish: make(chan struct{}),
+		mutex:             &sync.Mutex{},
 	}
 
-	go runInsertion(in.source, ch, in.willCloseOnFinish)
+	go in.runInsertion(in.willCloseOnFinish)
 
 	// go func() {}() // It also works!
 
@@ -40,7 +45,7 @@ func (in *Inserter) Insert(logs []log.Log) {
 	fmt.Println("Sent batch via channel in Insert")
 }
 
-func runInsertion(s log.Inserter, ch <-chan batch, closeOnFinish chan struct{}) {
+func (in *Inserter) runInsertion(closeOnFinish chan struct{}) {
 	fmt.Println("Started runInsertion")
 
 	var logsToInsert []log.Log
@@ -56,7 +61,7 @@ Loop:
 			fmt.Println("Got new tick")
 
 			if len(logsToInsert) > 0 {
-				s.Insert(logsToInsert)
+				in.insert(logsToInsert)
 				logsToInsert = nil
 			}
 
@@ -70,7 +75,7 @@ Loop:
 		// read C, true    from ch
 		// read nil, false from ch
 
-		case b, ok := <-ch:
+		case b, ok := <-in.ch:
 			if !ok {
 				break Loop
 			}
@@ -80,13 +85,36 @@ Loop:
 			logsToInsert = append(logsToInsert, b.logs...)
 
 			if len(logsToInsert) >= 15 {
-				s.Insert(logsToInsert)
+				in.insert(logsToInsert)
 				logsToInsert = nil
 			}
 		}
 	}
 
 	close(closeOnFinish) // TODO: check if it works
+}
+
+func (in *Inserter) insert(logs []log.Log) {
+	in.source.Insert(logs)
+
+	in.mutex.Lock()
+	defer in.mutex.Unlock()
+
+	in.totalLogsInserted += len(logs)
+}
+
+func (in *Inserter) GetTotalLogsInserted() int {
+	in.mutex.Lock()
+	defer in.mutex.Unlock()
+
+	return in.totalLogsInserted
+}
+
+func (in *Inserter) ResetTotalLogsInserted() {
+	in.mutex.Lock()
+	defer in.mutex.Unlock()
+
+	in.totalLogsInserted = 0
 }
 
 func (in *Inserter) Close() {
