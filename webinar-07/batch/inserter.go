@@ -7,8 +7,9 @@ import (
 )
 
 type Inserter struct {
-	source log.Inserter
-	ch     chan<- batch
+	source            log.Inserter
+	ch                chan<- batch
+	willCloseOnFinish chan struct{}
 }
 
 type batch struct {
@@ -16,21 +17,22 @@ type batch struct {
 }
 
 func NewInserter(s log.Inserter) *Inserter {
-	ch := make(chan batch, 1)
+	ch := make(chan batch, 100)
 
 	in := &Inserter{
-		source: s,
-		ch:     ch,
+		source:            s,
+		ch:                ch,
+		willCloseOnFinish: make(chan struct{}),
 	}
 
-	go runInsertion(in.source, ch)
+	go runInsertion(in.source, ch, in.willCloseOnFinish)
 
 	// go func() {}() // It also works!
 
 	return in
 }
 
-func (in Inserter) Insert(logs []log.Log) {
+func (in *Inserter) Insert(logs []log.Log) {
 	fmt.Println("Sending batch via channel in Insert")
 
 	in.ch <- batch{logs: logs}
@@ -38,13 +40,14 @@ func (in Inserter) Insert(logs []log.Log) {
 	fmt.Println("Sent batch via channel in Insert")
 }
 
-func runInsertion(s log.Inserter, ch <-chan batch) {
+func runInsertion(s log.Inserter, ch <-chan batch, closeOnFinish chan struct{}) {
 	fmt.Println("Started runInsertion")
 
 	var logsToInsert []log.Log
 
 	ticker := time.NewTicker(2 * time.Second)
 
+Loop:
 	for {
 		fmt.Println("Iterating in runInsertion")
 
@@ -57,7 +60,11 @@ func runInsertion(s log.Inserter, ch <-chan batch) {
 				logsToInsert = nil
 			}
 
-		case b := <-ch:
+		case b, ok := <-ch:
+			if !ok {
+				break Loop
+			}
+
 			fmt.Println("Got new value in runInsertion")
 
 			logsToInsert = append(logsToInsert, b.logs...)
@@ -68,4 +75,11 @@ func runInsertion(s log.Inserter, ch <-chan batch) {
 			}
 		}
 	}
+
+	close(closeOnFinish) // TODO: check if it works
+}
+
+func (in *Inserter) Close() {
+	close(in.ch)
+	<-in.willCloseOnFinish
 }

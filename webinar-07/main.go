@@ -17,7 +17,7 @@ func main() {
 
 	generateAndInsertLogs(batchInserter)
 
-	// TODO: add close() to save all the data
+	batchInserter.Close()
 }
 
 type Inserter interface {
