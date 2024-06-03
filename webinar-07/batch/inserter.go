@@ -60,6 +60,16 @@ Loop:
 				logsToInsert = nil
 			}
 
+		// send A to ch
+		// send B to ch
+		// send C to ch
+		// close(ch)
+		// cannot send anything to ch
+		// read A, true    from ch
+		// read B, true    from ch
+		// read C, true    from ch
+		// read nil, false from ch
+
 		case b, ok := <-ch:
 			if !ok {
 				break Loop
