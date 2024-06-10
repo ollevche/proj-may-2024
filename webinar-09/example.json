@@ -3,6 +3,6 @@
         "1",
         "2"
     ],
-    "string": "some value",
-    "int": 1
+    "stringField": "some value",
+    "intField": 1
 }
