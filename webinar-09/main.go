@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-// TODO:
-//	* endpoint /note with GET
-//  * endpoint /note with PUT
-
 func main() {
 	mux := http.NewServeMux()
 
@@ -18,7 +14,7 @@ func main() {
 		fmt.Println("In /hello")
 	})
 
-	mux.HandleFunc("/note", processNote)
+	mux.HandleFunc("/note", checkAuth(processNote))
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
@@ -71,5 +67,32 @@ func putNote(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+}
+
+type User struct {
+	Username string
+	Password string
+}
+
+var singleUser = User{
+	Username: "ollevche",
+	Password: "114477",
+}
+
+func checkAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		if singleUser.Username != username || singleUser.Password != password {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	}
 }
