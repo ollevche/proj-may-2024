@@ -117,6 +117,7 @@ func (ur *UserResource) CreateOne(w http.ResponseWriter, r *http.Request) {
 }
 
 func getWeatherByCity(city string) (string, error) {
+	// Docs: https://www.weatherbit.io/api/weather-current
 	const baseURL = "https://api.weatherbit.io/v2.0/current"
 
 	r, err := http.NewRequest(http.MethodGet, baseURL, nil)
