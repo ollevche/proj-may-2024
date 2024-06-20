@@ -60,6 +60,12 @@ func main() {
 
 	for {
 		n, err := file.Read(buff)
+
+		// && = ТА, || = АБО
+		// ЯКЩО помилка ненульова ТА помилка є EOF (End Of File)
+		// if err != nil && errors.Is(err, io.EOF) {
+		// }
+
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				break
