@@ -22,7 +22,6 @@ func createFile(filename string) error {
 
 	log.Info().Msgf("Generating %d lines", linesNum)
 
-	// TODO: check why file writing didn't work
 	for i := 0; i < linesNum; i++ {
 		fileContent += fmt.Sprintf("%d:\tabcde\n", i)
 	}
