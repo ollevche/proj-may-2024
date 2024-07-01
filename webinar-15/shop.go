@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+// TODO: refactor these entities
+
 type Address struct {
 	City     string
 	Street   string
