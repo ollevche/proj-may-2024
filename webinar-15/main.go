@@ -3,14 +3,22 @@ package main
 import (
 	"net/http"
 
+	"w15/internal/user"
+
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /users", CreateUser)
-	mux.HandleFunc("PUT /users", UpdateUser)
+	userStorage := user.NewInMemStorage()
+
+	userService := user.NewService(userStorage)
+
+	userHandler := user.NewHandler(userService)
+
+	mux.HandleFunc("POST /users", userHandler.Create)
+	// mux.HandleFunc("PUT /users", UpdateUser)
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {

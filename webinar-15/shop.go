@@ -1,12 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"net/http"
-	"sync"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 type Address struct {
@@ -24,6 +19,7 @@ type Item struct {
 
 type Order struct {
 	ID              string
+	UserID          string
 	Status          string
 	Items           []Item
 	DeliveryAddress Address
@@ -38,52 +34,23 @@ type Product struct {
 	Price       int
 }
 
-type User struct {
-	ID             string
-	Email          string
-	Password       string
-	SignedUpAt     time.Time
-	Orders         []Order
-	Role           string
-	ViewedProducts []Product
-}
+// TODO: refactor by example
+// func UpdateUser(w http.ResponseWriter, r *http.Request) {
+// 	var u User
 
-var (
-	usersM sync.Mutex
-	users  []User
-)
+// 	err := json.NewDecoder(r.Body).Decode(&u)
+// 	if err != nil {
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		log.Debug().Err(err).Msg("Failed to decode JSON")
+// 		return
+// 	}
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var u User
+// 	usersM.Lock()
+// 	defer usersM.Unlock()
 
-	err := json.NewDecoder(r.Body).Decode(&u)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Debug().Err(err).Msg("Failed to decode JSON")
-		return
-	}
-
-	usersM.Lock()
-	defer usersM.Unlock()
-	users = append(users, u)
-}
-
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	var u User
-
-	err := json.NewDecoder(r.Body).Decode(&u)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Debug().Err(err).Msg("Failed to decode JSON")
-		return
-	}
-
-	usersM.Lock()
-	defer usersM.Unlock()
-
-	for i := range users {
-		if users[i].ID == u.ID {
-			users[i] = u
-		}
-	}
-}
+// 	for i := range users {
+// 		if users[i].ID == u.ID {
+// 			users[i] = u
+// 		}
+// 	}
+// }
